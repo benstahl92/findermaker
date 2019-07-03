@@ -327,7 +327,7 @@ def unique_radec(ra, dec, tol):
     assigned = set()
     for j,m in enumerate(matches):
         if not (j % 1000):
-            print j
+            print(j)
         # get the lowest index in this group
         isort = sorted(m.ind)
         ilow = isort[0]

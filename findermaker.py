@@ -14,7 +14,8 @@ import time
 from subprocess import Popen, PIPE
 import coord
 from astrometryClient.client import Client as anClient
-import pyfits as pf
+#import pyfits as pf
+from astropy.io import fits as pf
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -85,14 +86,14 @@ class FinderMaker(object):
         self.build_plot()
         if (self.ra == self.dec == None):
             # have the user choose the object 
-            raw_input( '\n\nHit enter and then identify the target.\n\n' )
+            input( '\n\nHit enter and then identify the target.\n\n' )
             while True:
                 res = self.get_star()
                 if res != None:
                     self.ra, self.dec = res
                     break
                 else:
-                    print "\nThat didn't work. Try again.\n"
+                    print("\nThat didn't work. Try again.\n")
         self.add_object( self.ra, self.dec, wcs=True, marker='a' )
         self.add_offset_stars()
     
@@ -113,14 +114,14 @@ class FinderMaker(object):
         c.login(nova_key)
         
         # upload the image
-        print '\n\nUploading image to astrometry.net\n\n'
+        print('\n\nUploading image to astrometry.net\n\n')
         kwargs = {'publicly_visible': 'y', 'allow_modifications': 'd', 'allow_commercial_use': 'd'}
         upres = c.upload(self.image, **kwargs)
         stat = upres['status']
         if stat != 'success':
             raise IOError('Upload failed: status %s\n %s\n' %(str(stat), str(upres)))
         subID = upres['subid']
-        print '\n\nUpload successful. Submission id:',subID,'\n\n'
+        print('\n\nUpload successful. Submission id:',subID,'\n\n')
         
         # Wait for the response
         while True:
@@ -131,7 +132,7 @@ class FinderMaker(object):
                     if j is not None:
                         break
                 if j is not None:
-                    print '\n\nReceived job id',j,'\n\n'
+                    print('\n\nReceived job id',j,'\n\n')
                     jobID = j
                     break
             time.sleep(5)
@@ -148,7 +149,7 @@ class FinderMaker(object):
             raise IOError('astrometry.net query failed: status %s'%str(stat))
         
         # download the new image
-        print '\n\nGrabbing solved image\n\n'
+        print('\n\nGrabbing solved image\n\n')
         url = nova_url.replace('api','new_fits_file/%i' %jobID)
         try:
             os.remove( new_image )
@@ -163,7 +164,7 @@ class FinderMaker(object):
         """
         url = "http://archive.stsci.edu/cgi-bin/dss_search?v=3&r=%.8f&d=%.8f$" %(self.ra, self.dec) +\
               "&h=%.2f&w=%.2f&f=fits&c=none&fov=NONE&e=J2000" %(size, size)
-        print 'Downloading image.'
+        print('Downloading image.')
         try:
             os.remove( name )
         except OSError:
@@ -218,7 +219,7 @@ class FinderMaker(object):
             error_plot = self.diagnostics
         # convert arcseconds into degrees
         cutout = cutout/3600.0
-        print "Click on the object."
+        print("Click on the object.")
         [(x,y)] = plt.ginput()  # in pixels
         # map the coutout size (in arcseconds) onto pixel size
         #  Use the fact that delta(Dec) = delta(true angle)
@@ -255,7 +256,7 @@ class FinderMaker(object):
                                   [np.min(bgZ),0.0, 0.0],
                                   args=(bgZ, bgX, bgY))
             if not success:
-                print 'background fitting failed!'
+                print('background fitting failed!')
                 return None
             else:
                 plane = self._plane(fit_params, X, Y)
@@ -351,9 +352,9 @@ class FinderMaker(object):
                              size='large', weight='bold', ha='left', color=red)
                 self.annotations.append( plt.annotate('From star\nto target:', (0.8, 0.9), 
                                          xycoords='axes fraction', weight='bold', color=red) )
-                raw_input( '\n\nHit enter, then choose your first offset star.\n' )
+                input( '\n\nHit enter, then choose your first offset star.\n' )
             else:
-                inn = raw_input('\nHit enter and choose another offset star, or type "q" or "d" to quit.\n')
+                inn = input('\nHit enter and choose another offset star, or type "q" or "d" to quit.\n')
                 if 'q' in inn.lower() or 'd' in inn.lower():
                     return
             ra,dec = self.get_star()

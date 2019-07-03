@@ -2,12 +2,12 @@ import os
 import sys
 import time
 import base64
-from urllib2 import urlopen
-from urllib2 import Request
-from urllib2 import HTTPError
-from urllib import urlencode
-from urllib import quote
-from exceptions import Exception
+from urllib.request import urlopen, Request
+#from urllib import Request
+from urllib.error import HTTPError
+from urllib.parse import urlencode, quote
+#from urllib import quote
+#from exceptions import Exception
 from email.mime.multipart import MIMEMultipart
 
 from email.mime.base import MIMEBase
@@ -40,11 +40,11 @@ class Client(object):
         '''
         if self.session is not None:
             args.update({ 'session' : self.session })
-        print 'Python:', args
+        print('Python:', args)
         json = python2json(args)
-        print 'Sending json:', json
+        print('Sending json:', json)
         url = self.get_url(service)
-        print 'Sending to URL:', url
+        print('Sending to URL:', url)
 
         # If we're sending a file, format a multipart/form-data
         if file_args is not None:
@@ -81,9 +81,9 @@ class Client(object):
                     # doesn't provide the flexibility to override, so we
                     # have to copy-n-paste-n-modify.
                     for h, v in msg.items():
-                        print >> self._fp, ('%s: %s\r\n' % (h,v)),
+                        print(self._fp, ('%s: %s\r\n' % (h,v)))
                     # A blank line always separates headers from body
-                    print >> self._fp, '\r\n',
+                    print(self._fp, '\r\n')
 
                 # The _write_multipart method calls "clone" for the
                 # subparts.  We hijack that, setting root=False
@@ -97,21 +97,21 @@ class Client(object):
             headers = {'Content-type': mp.get('Content-type')}
 
             if False:
-                print 'Sending headers:'
-                print ' ', headers
-                print 'Sending data:'
-                print data[:1024].replace('\n', '\\n\n').replace('\r', '\\r')
+                print('Sending headers:')
+                print(' ', headers)
+                print('Sending data:')
+                print(data[:1024].replace('\n', '\\n\n').replace('\r', '\\r'))
                 if len(data) > 1024:
-                    print '...'
-                    print data[-256:].replace('\n', '\\n\n').replace('\r', '\\r')
-                    print
+                    print('...')
+                    print(data[-256:].replace('\n', '\\n\n').replace('\r', '\\r'))
+                    print('')
 
         else:
             # Else send x-www-form-encoded
             data = {'request-json': json}
-            print 'Sending form data:', data
+            print('Sending form data:', data)
             data = urlencode(data)
-            print 'Sending data:', data
+            print('Sending data:', data)
             headers = {}
 
         request = Request(url=url, headers=headers, data=data)
@@ -119,26 +119,26 @@ class Client(object):
         try:
             f = urlopen(request)
             txt = f.read()
-            print 'Got json:', txt
+            print('Got json:', txt)
             result = json2python(txt)
-            print 'Got result:', result
+            print('Got result:', result)
             stat = result.get('status')
-            print 'Got status:', stat
+            print('Got status:', stat)
             if stat == 'error':
                 errstr = result.get('errormessage', '(none)')
                 raise RequestError('server error message: ' + errstr)
             return result
-        except HTTPError, e:
-            print 'HTTPError', e
+        except HTTPError as e:
+            print('HTTPError', e)
             txt = e.read()
             open('err.html', 'wb').write(txt)
-            print 'Wrote error text to err.html'
+            print('Wrote error text to err.html')
 
     def login(self, apikey):
         args = { 'apikey' : apikey }
         result = self.send_request('login', args)
         sess = result.get('session')
-        print 'Got session:', sess
+        print('Got session:', sess)
         if not sess:
             raise RequestError('no session in result')
         self.session = sess
@@ -168,7 +168,7 @@ class Client(object):
                 args.update({key: val})
             elif default is not None:
                 args.update({key: default})
-        print 'Upload args:', args
+        print('Upload args:', args)
         return args
     
     def url_upload(self, url, **kwargs):
@@ -184,7 +184,7 @@ class Client(object):
             result = self.send_request('upload', args, (fn, f.read()))
             return result
         except IOError:
-            print 'File %s does not exist' % fn     
+            print('File %s does not exist' % fn)
             raise
     
     def submission_images(self, subid):
@@ -200,11 +200,11 @@ class Client(object):
                       cd21 = wcs.cd[2], cd22 = wcs.cd[3],
                       imagew = wcs.imagew, imageh = wcs.imageh)
         result = self.send_request(service, {'wcs':params})
-        print 'Result status:', result['status']
+        print('Result status:', result['status'])
         plotdata = result['plot']
         plotdata = base64.b64decode(plotdata)
         open(outfn, 'wb').write(plotdata)
-        print 'Wrote', outfn
+        print('Wrote', outfn)
 
     def sdss_plot(self, outfn, wcsfn, wcsext=0):
         return self.overlay_plot('sdss_image_for_wcs', outfn,
@@ -225,17 +225,17 @@ class Client(object):
         stat = result.get('status')
         if stat == 'success':
             result = self.send_request('jobs/%s/calibration' % job_id)
-            print 'Calibration:', result
+            print('Calibration:', result)
             result = self.send_request('jobs/%s/tags' % job_id)
-            print 'Tags:', result
+            print('Tags:', result)
             result = self.send_request('jobs/%s/machine_tags' % job_id)
-            print 'Machine Tags:', result
+            print('Machine Tags:', result)
             result = self.send_request('jobs/%s/objects_in_field' % job_id)
-            print 'Objects in field:', result
+            print('Objects in field:', result)
             result = self.send_request('jobs/%s/annotations' % job_id)
-            print 'Annotations:', result
+            print('Annotations:', result)
             result = self.send_request('jobs/%s/info' % job_id)
-            print 'Calibration:', result
+            print('Calibration:', result)
 
         return stat
 
@@ -312,7 +312,7 @@ if __name__ == '__main__':
         default='d',
         help='Select license to disallow commercial use of submission') 
     opt,args = parser.parse_args()
-    print opt, args
+    print(opt, args)
 
     if opt.apikey is None:
         # try the environment
@@ -320,7 +320,7 @@ if __name__ == '__main__':
     if opt.apikey is None:
         parser.print_help()
         print
-        print 'You must either specify --apikey or set AN_API_KEY'
+        print('You must either specify --apikey or set AN_API_KEY')
         sys.exit(-1)
 
     args = {}
@@ -365,8 +365,8 @@ if __name__ == '__main__':
 
         stat = upres['status']
         if stat != 'success':
-            print 'Upload failed: status', stat
-            print upres
+            print('Upload failed: status', stat)
+            print(upres)
             sys.exit(-1)
 
         opt.sub_id = upres['subid']
@@ -374,19 +374,19 @@ if __name__ == '__main__':
     if opt.wait:
         if opt.job_id is None:
             if opt.sub_id is None:
-                print "Can't --wait without a submission id or job id!"
+                print("Can't --wait without a submission id or job id!")
                 sys.exit(-1)
 
             while True:
                 stat = c.sub_status(opt.sub_id, justdict=True)
-                print 'Got status:', stat
+                print('Got status:', stat)
                 jobs = stat.get('jobs', [])
                 if len(jobs):
                     for j in jobs:
                         if j is not None:
                             break
                     if j is not None:
-                        print 'Selecting job id', j
+                        print('Selecting job id', j)
                         opt.job_id = j
                         break
                 time.sleep(5)
@@ -394,7 +394,7 @@ if __name__ == '__main__':
         success = False
         while True:
             stat = c.job_status(opt.job_id, justdict=True)
-            print 'Got job status:', stat
+            print ('Got job status:', stat)
             if stat.get('status','') in ['success']:
                 success = (stat['status'] == 'success')
                 break
@@ -423,13 +423,13 @@ if __name__ == '__main__':
                 retrieveurls.append((url, opt.kmz))
 
             for url,fn in retrieveurls:
-                print 'Retrieving file from', url, 'to', fn
+                print('Retrieving file from', url, 'to', fn)
                 f = urlopen(url)
                 txt = f.read()
                 w = open(fn, 'wb')
                 w.write(txt)
                 w.close()
-                print 'Wrote to', fn
+                print('Wrote to', fn)
 
                 
         opt.job_id = None
@@ -442,21 +442,21 @@ if __name__ == '__main__':
         (wcsfn, outfn) = opt.galex_wcs
         c.galex_plot(outfn, wcsfn)
     if opt.sub_id:
-        print c.sub_status(opt.sub_id)
+        print(c.sub_status(opt.sub_id))
     if opt.job_id:
-        print c.job_status(opt.job_id)
+        print(c.job_status(opt.job_id))
         #result = c.send_request('jobs/%s/annotations' % opt.job_id)
         #print 'Annotations:', result
 
     if opt.jobs_by_tag:
         tag = opt.jobs_by_tag
-        print c.jobs_by_tag(tag, None)
+        print(c.jobs_by_tag(tag, None))
     if opt.jobs_by_exact_tag:
         tag = opt.jobs_by_exact_tag
-        print c.jobs_by_tag(tag, 'yes')
+        print(c.jobs_by_tag(tag, 'yes'))
 
     if opt.myjobs:
         jobs = c.myjobs()
-        print jobs
+        print(jobs)
 
     #print c.submission_images(1)
