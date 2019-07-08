@@ -15,7 +15,7 @@ from email.mime.application  import MIMEApplication
 
 from email.encoders import encode_noop
 
-from api_util import json2python, python2json
+from .api_util import json2python, python2json
 
 class MalformedResponse(Exception):
     pass
